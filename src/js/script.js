@@ -1,24 +1,30 @@
-import { BASE_URL, options } from "./pixabay-api.js";
-import axios from "axios";
-import { Notify } from "notiflix/build/notiflix-notify-aio.js";
-import simpleLightbox from "simplelightbox";
-import "simplelightbox/dist/simple-lightbox.min.css";
+import axios from 'axios';
+import { Notify } from 'notiflix/build/notiflix-notify-aio';
+import SimpleLightbox from 'simplelightbox';
+import 'simplelightbox/dist/simple-lightbox.min.css';
+import { BASE_URL, options } from './pixabay-api.js';
 
-//ELEMENTS
-const galleryEl = document.querySelector(".gallery");
-const searchInputEl = document.querySelector('input[name="searchQuery"]');
-const searchFormEl = document.getElementById("search-form");
+///////////////////////////////////////////////////////////////
 
-let reachEnd = false;
-let totalHits = 0;
+// DOM LINKS
+const galleryEl = document.querySelector('.gallery');
+const searchInputEl = document.querySelector('input[name="searchQuery"');
+const searchFormEl = document.getElementById('search-form');
 
-const lightbox = new simpleLightbox(".lightbox", {
-  captionsData: "alt",
+///////////////////////////////////////////////////////////////
+
+// instantiate simplelightbox
+const lightbox = new SimpleLightbox('.lightbox', {
+  captionsData: 'alt',
   captionDelay: 250,
 });
 
+///////////////////////////////////////////////////////////////
+let totalHits = 0;
+let reachedEnd = false;
+
 function renderGallery(hits) {
-  let markup = hits
+  const markup = hits
     .map(
       ({
         webformatURL,
@@ -30,74 +36,80 @@ function renderGallery(hits) {
         downloads,
       }) => {
         return `
-                <a href="${largeImageURL}" class='lightbox'>
-                <div class="photo-card">
-                    <img src="${webformatURL}" alt="${tags}" loading="lazy" />
-                    <div class="info">
-                    <p class="info-item">
-                        <b>Likes</b>
-                        ${likes}
-                    </p>
-                    <p class="info-item">
-                        <b>Views</b>
-                        ${views}
-                    </p>
-                    <p class="info-item">
-                        <b>Comments</b>
-                        ${comments}
-                    </p>
-                    <p class="info-item">
-                        <b>Downloads</b>
-                        ${downloads}
-                    </p>
-                    </div>
-                </div>
-                </a>
-            `;
+              <a href="${largeImageURL}" class="lightbox">
+                  <div class="photo-card">
+                      <img src="${webformatURL}" alt="${tags}" loading="lazy" />
+                      <div class="info">
+                          <p class="info-item">
+                              <b>Likes</b>
+                              ${likes}
+                          </p>
+                          <p class="info-item">
+                              <b>Views</b>
+                              ${views}
+                          </p>
+                          <p class="info-item">
+                              <b>Comments</b>
+                              ${comments}
+                          </p>
+                          <p class="info-item">
+                              <b>Downloads</b>
+                              ${downloads}
+                          </p>
+                      </div>
+                  </div>
+              </a>
+              `;
       }
     )
-    .join("");
+    .join('');
 
-  galleryEl.insertAdjacentHTML("beforeend", markup);
+  galleryEl.insertAdjacentHTML('beforeend', markup);
 
-  //if the user has reached the end of the collection
+  //   If the user has reached the end of the collection
   if (options.params.page * options.params.per_page >= totalHits) {
-    if (!reachEnd) {
-      Notify.info(
-        "We are sorry but you've reached the end of the search result"
-      );
-      reachEnd = true;
+    if (!reachedEnd) {
+      Notify.info("We're sorry, but you've reached the end of search results.");
+      reachedEnd = true;
     }
   }
   lightbox.refresh();
 }
 
+///////////////////////////////////////////////////////////////
+
 async function handleSubmit(e) {
   e.preventDefault();
   options.params.q = searchInputEl.value.trim();
-
-  if (options.params.q === "") return;
+  if (options.params.q === '') {
+    return;
+  }
   options.params.page = 1;
-  galleryEl.innerHTML = "";
-  reachEnd = false;
+  galleryEl.innerHTML = '';
+  reachedEnd = false;
 
   try {
     const res = await axios.get(BASE_URL, options);
     totalHits = res.data.totalHits;
 
     const { hits } = res.data;
+    console.log(hits);
 
     if (hits.length === 0) {
-      Notify.failure("Sorry, there are no images matching your search query");
+      Notify.failure(
+        'Sorry, there are no images matching your search query. Please try again.'
+      );
     } else {
-      Notify.success(`Hooray! We found ${totalHits} images`);
+      Notify.success(`Hooray! We found ${totalHits} images.`);
       renderGallery(hits);
     }
-    searchInputEl.value = "";
-  } catch (e) {
-    Notify.failure(e);
+    searchInputEl.value = '';
+  } catch (err) {
+    Notify.failure(err);
   }
 }
+
+///////////////////////////////////////////////////////////////
 
 async function loadMore() {
   options.params.page += 1;
@@ -105,8 +117,8 @@ async function loadMore() {
     const res = await axios.get(BASE_URL, options);
     const hits = res.data.hits;
     renderGallery(hits);
-  } catch (e) {
-    Notify.failure(e);
+  } catch (err) {
+    Notify.failure(err);
   }
 }
 
@@ -116,6 +128,5 @@ function handleScroll() {
     loadMore();
   }
 }
-
-searchFormEl.addEventListener("submit", handleSubmit);
-window.addEventListener("scroll", handleScroll);
+searchFormEl.addEventListener('submit', handleSubmit);
+window.addEventListener('scroll', handleScroll);
